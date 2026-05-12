@@ -1,44 +1,68 @@
 package edu.sdccd.cisc191.server;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Tracks server-wide match statistics shared by many gRPC request threads.
  */
 public class MatchStatistics {
 
-    // TODO 9: Replace these counters with a thread-safe design.
+    // Replace these counters with a thread-safe design.
     // Recommended: AtomicInteger joinedMatchCount and AtomicInteger completedMatchCount.
-    private int joinedMatchCount = 0;
-    private int completedMatchCount = 0;
+    private final AtomicInteger joinedMatchCount = new AtomicInteger(0);
+    private final AtomicInteger completedMatchCount = new AtomicInteger(0);
+
+    private final AtomicInteger rankedJoinCount = new AtomicInteger(0);
+    private final AtomicInteger casualJoinCount = new AtomicInteger(0);
+
+    private final ConcurrentHashMap<String, AtomicInteger> difficultyMap = new ConcurrentHashMap<>();
 
     /**
-     * TODO 9: Make this update thread-safe.
+     * Make this update thread-safe.
      */
-    public void recordJoin() {
-        joinedMatchCount = joinedMatchCount + 1;
-    }
+    public void recordJoin() {joinedMatchCount.addAndGet(1);}
 
     /**
-     * TODO 9: Make this update thread-safe.
+     * Make this update thread-safe.
      */
     public void recordCompletion() {
-        completedMatchCount = completedMatchCount + 1;
+        completedMatchCount.incrementAndGet();
+    }
+
+    public int getTotalJoins(){
+        return joinedMatchCount.get();
+    }
+
+    public int getRankedJoins(){
+        return rankedJoinCount.get();
+    }
+
+    public int getCasualJoins(){
+        return casualJoinCount.get();
+    }
+
+    public int getJoinCountForDifficulty(String difficulty){
+        AtomicInteger difficultyCount = difficultyMap.get(difficulty);
+        return difficultyCount == null ? 0 : difficultyCount.get();
     }
 
     public int getJoinedMatchCount() {
-        return joinedMatchCount;
+        return joinedMatchCount.get();
     }
 
     public int getCompletedMatchCount() {
-        return completedMatchCount;
+        return completedMatchCount.get();
     }
 
     /**
-     * TODO 9: Return a readable, thread-safe statistics summary.
+     * Return a readable, thread-safe statistics summary.
      *
      * Expected format:
      * Server stats: 3 joined, 2 completed
      */
     public String buildStatusLine() {
-        return "TODO: server stats";
+        return "Server stats: "
+                + joinedMatchCount.get() + " joined, "
+                + completedMatchCount.get() + " completed";
     }
 }
